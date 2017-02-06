@@ -128,7 +128,7 @@ void E340::step() {
 		float freq = 261.626 * powf(2.0, pitch / 12.0);
 
 		// Advance phase
-		float deltaPhase = freq / gRack->sampleRate;
+		float deltaPhase = freq / gSampleRate;
 		float phase = phases[i] + deltaPhase;
 
 		// Reset phase
@@ -165,7 +165,7 @@ void E340::step() {
 	saws /= density;
 
 	// Apply HP filter at 20Hz
-	float r = 20.0 / gRack->sampleRate;
+	float r = 20.0 / gSampleRate;
 	sineFilter.setCutoff(r);
 	sawFilter.setCutoff(r);
 
@@ -181,9 +181,9 @@ E340Widget::E340Widget() : ModuleWidget(new E340()) {
 	box.size = Vec(15*14, 380);
 
 	{
-		ModulePanel *panel = new ESeriesPanel();
+		Panel *panel = new LightPanel();
 		panel->box.size = box.size;
-		panel->imageFilename = "plugins/ESeries/res/E340.png";
+		panel->backgroundImage = Image::load("plugins/ESeries/res/E340.png");
 		addChild(panel);
 	}
 
@@ -198,15 +198,15 @@ E340Widget::E340Widget() : ModuleWidget(new E340()) {
 
 	addParam(createParam<ESeriesSwitch>(Vec(91, 147), module, E340::DENSITY_PARAM, 0.0, 2.0, 2.0));
 
-	addInput(createInput(Vec(19, 248), module, E340::PITCH_INPUT));
-	addInput(createInput(Vec(69, 248), module, E340::FM_INPUT));
-	addInput(createInput(Vec(119, 248), module, E340::SYNC_INPUT));
-	addInput(createInput(Vec(169, 248), module, E340::SPREAD_INPUT));
+	addInput(createInput<InputPortCL1362>(Vec(19-6, 248-5), module, E340::PITCH_INPUT));
+	addInput(createInput<InputPortCL1362>(Vec(69-6, 248-5), module, E340::FM_INPUT));
+	addInput(createInput<InputPortCL1362>(Vec(119-6, 248-5), module, E340::SYNC_INPUT));
+	addInput(createInput<InputPortCL1362>(Vec(169-6, 248-5), module, E340::SPREAD_INPUT));
 
-	addInput(createInput(Vec(19, 306), module, E340::CHAOS_INPUT));
-	addInput(createInput(Vec(69, 306), module, E340::CHAOS_BW_INPUT));
-	addOutput(createOutput(Vec(119, 306), module, E340::SAW_OUTPUT));
-	addOutput(createOutput(Vec(169, 306), module, E340::SINE_OUTPUT));
+	addInput(createInput<InputPortCL1362>(Vec(19-6, 306-5), module, E340::CHAOS_INPUT));
+	addInput(createInput<InputPortCL1362>(Vec(69-6, 306-5), module, E340::CHAOS_BW_INPUT));
+	addOutput(createOutput<OutputPortCL1362>(Vec(119-6, 306-5), module, E340::SAW_OUTPUT));
+	addOutput(createOutput<OutputPortCL1362>(Vec(169-6, 306-5), module, E340::SINE_OUTPUT));
 
 	addChild(createScrew(Vec(15, 0)));
 	addChild(createScrew(Vec(box.size.x-30, 0)));

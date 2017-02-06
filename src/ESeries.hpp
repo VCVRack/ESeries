@@ -7,14 +7,7 @@ using namespace rack;
 // helpers
 ////////////////////
 
-struct ESeriesPanel : ModulePanel {
-	ESeriesPanel() {
-		backgroundColor = nvgRGB(0xa0, 0xa0, 0xa0);
-		highlightColor = nvgRGB(0xd0, 0xd0, 0xd0);
-	}
-};
-
-struct ESeriesKnob : Knob {
+struct ESeriesKnob : SpriteKnob {
 	ESeriesKnob() {
 		minIndex = 44+5;
 		maxIndex = -46-5;
@@ -22,11 +15,11 @@ struct ESeriesKnob : Knob {
 		box.size = Vec(48, 48);
 		spriteOffset = Vec(-4, -3);
 		spriteSize = Vec(64, 64);
-		spriteFilename = "plugins/ESeries/res/knob_medium.png";
+		spriteImage = Image::load("plugins/ESeries/res/knob_medium.png");
 	}
 };
 
-struct ESeriesSwitch : Knob {
+struct ESeriesSwitch : SpriteKnob {
 	ESeriesSwitch() {
 		minIndex = 1;
 		maxIndex = 0;
@@ -34,7 +27,7 @@ struct ESeriesSwitch : Knob {
 		box.size = Vec(27, 27);
 		spriteOffset = Vec(-15, -15);
 		spriteSize = Vec(56, 56);
-		spriteFilename = "plugins/ESeries/res/switch.png";
+		spriteImage = Image::load("plugins/ESeries/res/switch.png");
 	}
 };
 
