@@ -177,7 +177,9 @@ void E340::step() {
 }
 
 
-E340Widget::E340Widget() : ModuleWidget(new E340()) {
+E340Widget::E340Widget() {
+	E340 *module = new E340();
+	setModule(module);
 	box.size = Vec(15*14, 380);
 
 	{
@@ -208,8 +210,8 @@ E340Widget::E340Widget() : ModuleWidget(new E340()) {
 	addOutput(createOutput<OutputPortCL1362>(Vec(119-6, 306-5), module, E340::SAW_OUTPUT));
 	addOutput(createOutput<OutputPortCL1362>(Vec(169-6, 306-5), module, E340::SINE_OUTPUT));
 
-	addChild(createScrew(Vec(15, 0)));
-	addChild(createScrew(Vec(box.size.x-30, 0)));
-	addChild(createScrew(Vec(15, 365)));
-	addChild(createScrew(Vec(box.size.x-30, 365)));
+	addChild(createScrew<SilverScrew>(Vec(15, 0)));
+	addChild(createScrew<SilverScrew>(Vec(box.size.x-30, 0)));
+	addChild(createScrew<SilverScrew>(Vec(15, 365)));
+	addChild(createScrew<SilverScrew>(Vec(box.size.x-30, 365)));
 }
