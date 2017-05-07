@@ -189,6 +189,11 @@ E340Widget::E340Widget() {
 		addChild(panel);
 	}
 
+	addChild(createScrew<ScrewSilver>(Vec(15, 0)));
+	addChild(createScrew<ScrewSilver>(Vec(box.size.x-30, 0)));
+	addChild(createScrew<ScrewSilver>(Vec(15, 365)));
+	addChild(createScrew<ScrewSilver>(Vec(box.size.x-30, 365)));
+
 	addParam(createParam<SynthTechAlco>(Vec(27, 43), module, E340::COARSE_PARAM, -48.0, 48.0, 0.0));
 	addParam(createParam<SynthTechAlco>(Vec(138, 43), module, E340::FINE_PARAM, -1.0, 1.0, 0.0));
 
@@ -198,7 +203,7 @@ E340Widget::E340Widget() {
 	addParam(createParam<SynthTechAlco>(Vec(27, 175), module, E340::CHAOS_PARAM, 0.0, 1.0, 0.0));
 	addParam(createParam<SynthTechAlco>(Vec(138, 175), module, E340::CHAOS_BW_PARAM, 0.0, 1.0, 0.5));
 
-	addParam(createParam<ESeriesSwitch>(Vec(91, 147), module, E340::DENSITY_PARAM, 0.0, 2.0, 2.0));
+	addParam(createParam<NKK>(Vec(89, 140), module, E340::DENSITY_PARAM, 0.0, 2.0, 2.0));
 
 	addInput(createInput<CL1362Port>(Vec(13, 243), module, E340::PITCH_INPUT));
 	addInput(createInput<CL1362Port>(Vec(63, 243), module, E340::FM_INPUT));
@@ -209,9 +214,4 @@ E340Widget::E340Widget() {
 	addInput(createInput<CL1362Port>(Vec(63, 301), module, E340::CHAOS_BW_INPUT));
 	addOutput(createOutput<CL1362Port>(Vec(113, 301), module, E340::SAW_OUTPUT));
 	addOutput(createOutput<CL1362Port>(Vec(163, 301), module, E340::SINE_OUTPUT));
-
-	addChild(createScrew<SilverScrew>(Vec(15, 0)));
-	addChild(createScrew<SilverScrew>(Vec(box.size.x-30, 0)));
-	addChild(createScrew<SilverScrew>(Vec(15, 365)));
-	addChild(createScrew<SilverScrew>(Vec(box.size.x-30, 365)));
 }
