@@ -64,9 +64,9 @@ void E340::step() {
 	// Base pitch
 	float basePitch = params[COARSE_PARAM] + 12.0 * getf(inputs[PITCH_INPUT]);
 	if (inputs[FM_INPUT]) {
-		basePitch += quadraticBipolar(params[FM_PARAM]) * 12.0 * *inputs[FM_INPUT];
+		basePitch += params[FM_PARAM] * *inputs[FM_INPUT];
 	}
-	basePitch += 3.0 * quadraticBipolar(params[FINE_PARAM]);
+	basePitch += params[FINE_PARAM];
 
 	// Spread
 	float spread = params[SPREAD_PARAM] + getf(inputs[SPREAD_INPUT]) / 10.0;
