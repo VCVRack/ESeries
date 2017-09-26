@@ -185,7 +185,7 @@ E340Widget::E340Widget() {
 	{
 		Panel *panel = new LightPanel();
 		panel->box.size = box.size;
-		panel->backgroundImage = Image::load("plugins/ESeries/res/E340.png");
+		panel->backgroundImage = Image::load(assetPlugin(plugin, "res/E340.png"));
 		addChild(panel);
 	}
 
