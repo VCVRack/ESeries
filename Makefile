@@ -5,9 +5,6 @@ include ../../plugin.mk
 
 
 dist: all
-ifndef VERSION
-	$(error VERSION is not set.)
-endif
 	mkdir -p dist/ESeries
 	cp LICENSE* dist/ESeries/
 	cp plugin.* dist/ESeries/

@@ -44,11 +44,7 @@ struct E340 : Module {
 };
 
 
-E340::E340() {
-	params.resize(NUM_PARAMS);
-	inputs.resize(NUM_INPUTS);
-	outputs.resize(NUM_OUTPUTS);
-
+E340::E340() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {
 	sineMinBLEP.minblep = minblep_16_32;
 	sineMinBLEP.oversample = 32;
 	sawMinBLEP.minblep = minblep_16_32;
@@ -62,33 +58,33 @@ E340::E340() {
 
 void E340::step() {
 	// Base pitch
-	float basePitch = params[COARSE_PARAM] + 12.0 * getf(inputs[PITCH_INPUT]);
-	if (inputs[FM_INPUT]) {
-		basePitch += params[FM_PARAM] * *inputs[FM_INPUT];
+	float basePitch = params[COARSE_PARAM].value + 12.0 * inputs[PITCH_INPUT].value;
+	if (inputs[FM_INPUT].active) {
+		basePitch += params[FM_PARAM].value * inputs[FM_INPUT].value;
 	}
-	basePitch += params[FINE_PARAM];
+	basePitch += params[FINE_PARAM].value;
 
 	// Spread
-	float spread = params[SPREAD_PARAM] + getf(inputs[SPREAD_INPUT]) / 10.0;
+	float spread = params[SPREAD_PARAM].value + inputs[SPREAD_INPUT].value / 10.0;
 	spread = clampf(spread, 0.0, 1.0);
 	const float spreadPower = 50.0;
 	spread = (powf(spreadPower + 1.0, spread) - 1.0) / spreadPower;
 
 	// Chaos
-	float chaos = params[CHAOS_PARAM] + getf(inputs[CHAOS_INPUT]) / 10.0;
+	float chaos = params[CHAOS_PARAM].value + inputs[CHAOS_INPUT].value / 10.0;
 	chaos = clampf(chaos, 0.0, 1.0);
 	const float chaosPower = 50.0;
 	chaos = 8.0 * (powf(chaosPower + 1.0, chaos) - 1.0) / chaosPower;
 
 	// Chaos BW
-	float chaosBW = params[CHAOS_BW_PARAM] + getf(inputs[CHAOS_BW_INPUT]) / 10.0;
+	float chaosBW = params[CHAOS_BW_PARAM].value + inputs[CHAOS_BW_INPUT].value / 10.0;
 	chaosBW = clampf(chaosBW, 0.0, 1.0);
 	chaosBW = 6.0 * powf(100.0, chaosBW);
 	// This shouldn't scale with the global sample rate, because of reasons.
 	float filterCutoff = chaosBW / 44100.0;
 
 	// Check sync input
-	float newSync = getf(inputs[SYNC_INPUT]) - 0.25;
+	float newSync = inputs[SYNC_INPUT].value - 0.25;
 	float syncCrossing = INFINITY;
 	if (sync < 0.0 && newSync >= 0.0) {
 		float deltaSync = newSync - sync;
@@ -98,7 +94,7 @@ void E340::step() {
 
 	// Density
 	int density;
-	switch ((int)roundf(params[DENSITY_PARAM])) {
+	switch ((int)roundf(params[DENSITY_PARAM].value)) {
 		case 0: density = 2; break;
 		case 1: density = 4; break;
 		default: density = 8; break;
@@ -172,8 +168,8 @@ void E340::step() {
 	sineFilter.process(sines);
 	sawFilter.process(saws);
 
-	setf(outputs[SINE_OUTPUT], 5.0 * sineFilter.highpass());
-	setf(outputs[SAW_OUTPUT], 5.0 * sawFilter.highpass());
+	outputs[SINE_OUTPUT].value = 5.0 * sineFilter.highpass();
+	outputs[SAW_OUTPUT].value = 5.0 * sawFilter.highpass();
 }
 
 
