@@ -1,5 +1,6 @@
 #include "ESeries.hpp"
-#include "dsp.hpp"
+#include "dsp/filter.hpp"
+#include "dsp/minblep.hpp"
 
 
 struct E340 : Module {
