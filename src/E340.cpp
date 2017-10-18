@@ -41,7 +41,7 @@ struct E340 : Module {
 	RCFilter sawFilter;
 
 	E340();
-	void step();
+	void step() override;
 };
 
 
@@ -125,7 +125,7 @@ void E340::step() {
 		float freq = 261.626 * powf(2.0, pitch / 12.0);
 
 		// Advance phase
-		float deltaPhase = freq / gSampleRate;
+		float deltaPhase = freq / engineGetSampleRate();
 		float phase = phases[i] + deltaPhase;
 
 		// Reset phase
@@ -162,7 +162,7 @@ void E340::step() {
 	saws /= density;
 
 	// Apply HP filter at 20Hz
-	float r = 20.0 / gSampleRate;
+	float r = 20.0 / engineGetSampleRate();
 	sineFilter.setCutoff(r);
 	sawFilter.setCutoff(r);
 
