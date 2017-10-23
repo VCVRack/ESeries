@@ -5,8 +5,9 @@ Plugin *plugin;
 
 void init(rack::Plugin *p) {
 	plugin = p;
-	plugin->slug = "ESeries";
-	plugin->name = "E-Series";
-	plugin->homepageUrl = "https://github.com/VCVRack/ESeries";
-	createModel<E340Widget>(plugin, "E340", "E340 Cloud Generator");
+	p->slug = "ESeries";
+#ifdef VERSION
+	p->version = TOSTRING(VERSION);
+#endif
+	p->addModel(createModel<E340Widget>("ESeries", "E-Series", "E340", "E340 Cloud Generator"));
 }
