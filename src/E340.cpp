@@ -180,9 +180,9 @@ E340Widget::E340Widget() {
 	box.size = Vec(15*14, 380);
 
 	{
-		Panel *panel = new LightPanel();
+		SVGPanel *panel = new SVGPanel();
 		panel->box.size = box.size;
-		panel->backgroundImage = Image::load(assetPlugin(plugin, "res/E340.png"));
+		panel->setBackground(SVG::load(assetPlugin(plugin, "res/E340.svg")));
 		addChild(panel);
 	}
 
