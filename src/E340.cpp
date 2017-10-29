@@ -191,14 +191,14 @@ E340Widget::E340Widget() {
 	addChild(createScrew<ScrewSilver>(Vec(15, 365)));
 	addChild(createScrew<ScrewSilver>(Vec(box.size.x-30, 365)));
 
-	addParam(createParam<SynthTechAlco>(Vec(27, 43), module, E340::COARSE_PARAM, -48.0, 48.0, 0.0));
-	addParam(createParam<SynthTechAlco>(Vec(138, 43), module, E340::FINE_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<SynthTechAlco>(Vec(26, 43), module, E340::COARSE_PARAM, -48.0, 48.0, 0.0));
+	addParam(createParam<SynthTechAlco>(Vec(137, 43), module, E340::FINE_PARAM, -1.0, 1.0, 0.0));
 
-	addParam(createParam<SynthTechAlco>(Vec(27, 109), module, E340::FM_PARAM, 0.0, 1.0, 0.0));
-	addParam(createParam<SynthTechAlco>(Vec(138, 109), module, E340::SPREAD_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<SynthTechAlco>(Vec(26, 109), module, E340::FM_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<SynthTechAlco>(Vec(137, 109), module, E340::SPREAD_PARAM, 0.0, 1.0, 0.0));
 
-	addParam(createParam<SynthTechAlco>(Vec(27, 175), module, E340::CHAOS_PARAM, 0.0, 1.0, 0.0));
-	addParam(createParam<SynthTechAlco>(Vec(138, 175), module, E340::CHAOS_BW_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<SynthTechAlco>(Vec(26, 175), module, E340::CHAOS_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<SynthTechAlco>(Vec(137, 175), module, E340::CHAOS_BW_PARAM, 0.0, 1.0, 0.5));
 
 	addParam(createParam<NKK>(Vec(89, 140), module, E340::DENSITY_PARAM, 0.0, 2.0, 2.0));
 
