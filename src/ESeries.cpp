@@ -9,5 +9,6 @@ void init(rack::Plugin *p) {
 #ifdef VERSION
 	p->version = TOSTRING(VERSION);
 #endif
-	p->addModel(createModel<E340Widget>("ESeries", "E-Series", "E340", "E340 Cloud Generator"));
+
+	p->addModel(createModel<E340Widget>("E-Series", "E340", "E340 Cloud Generator"));
 }
