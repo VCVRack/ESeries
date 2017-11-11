@@ -7,9 +7,9 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="208.75951"
+   width="210"
    height="379.97141"
-   viewBox="0 0 208.75951 379.97142"
+   viewBox="0 0 210 379.97142"
    version="1.1"
    id="svg28657"
    sodipodi:docname="E340.svg"
@@ -38,14 +38,14 @@
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
      inkscape:window-width="2560"
-     inkscape:window-height="1440"
+     inkscape:window-height="1422"
      id="namedview28659"
      showgrid="false"
-     inkscape:zoom="4.9684214"
-     inkscape:cx="110.51088"
-     inkscape:cy="223.03288"
+     inkscape:zoom="7.0264089"
+     inkscape:cx="142.27994"
+     inkscape:cy="219.93534"
      inkscape:window-x="0"
-     inkscape:window-y="0"
+     inkscape:window-y="18"
      inkscape:window-maximized="0"
      inkscape:current-layer="svg28657"
      fit-margin-top="0"
@@ -59,14 +59,15 @@
      inkscape:snap-intersection-paths="false"
      inkscape:object-paths="true"
      inkscape:snap-object-midpoints="true"
-     inkscape:snap-global="false" />
+     inkscape:snap-global="false"
+     units="px" />
   <title
      id="title28362">E340_VCV</title>
   <path
      inkscape:connector-curvature="0"
      id="rect28364"
-     d="M 0.2645299,0.23606989 H 208.51066 V 379.70698 H 0.2645299 Z"
-     style="fill:#e9e8e8;stroke-width:1;stroke-miterlimit:10;stroke-dasharray:none" />
+     d="M 0.2645299,0.23606989 H 209.79154 V 379.70698 H 0.2645299 Z"
+     style="fill:#e9e8e8;stroke-width:1.00307071;stroke-miterlimit:10;stroke-dasharray:none" />
   <path
      style="fill:#000000;fill-opacity:1;stroke:none"
      id="path4081"

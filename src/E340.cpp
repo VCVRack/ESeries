@@ -61,7 +61,7 @@ void E340::step() {
 	// Base pitch
 	float basePitch = params[COARSE_PARAM].value + 12.0 * inputs[PITCH_INPUT].value;
 	if (inputs[FM_INPUT].active) {
-		basePitch += params[FM_PARAM].value * inputs[FM_INPUT].value;
+		basePitch += 12.0 / 4.0 * params[FM_PARAM].value * inputs[FM_INPUT].value;
 	}
 	basePitch += params[FINE_PARAM].value;
 
