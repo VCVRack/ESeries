@@ -67,19 +67,19 @@ void E340::step() {
 
 	// Spread
 	float spread = params[SPREAD_PARAM].value + inputs[SPREAD_INPUT].value / 10.0;
-	spread = clampf(spread, 0.0, 1.0);
+	spread = clamp(spread, 0.0f, 1.0f);
 	const float spreadPower = 50.0;
 	spread = (powf(spreadPower + 1.0, spread) - 1.0) / spreadPower;
 
 	// Chaos
 	float chaos = params[CHAOS_PARAM].value + inputs[CHAOS_INPUT].value / 10.0;
-	chaos = clampf(chaos, 0.0, 1.0);
+	chaos = clamp(chaos, 0.0f, 1.0f);
 	const float chaosPower = 50.0;
 	chaos = 8.0 * (powf(chaosPower + 1.0, chaos) - 1.0) / chaosPower;
 
 	// Chaos BW
 	float chaosBW = params[CHAOS_BW_PARAM].value + inputs[CHAOS_BW_INPUT].value / 10.0;
-	chaosBW = clampf(chaosBW, 0.0, 1.0);
+	chaosBW = clamp(chaosBW, 0.0f, 1.0f);
 	chaosBW = 6.0 * powf(100.0, chaosBW);
 	// This shouldn't scale with the global sample rate, because of reasons.
 	float filterCutoff = chaosBW / 44100.0;
@@ -121,11 +121,11 @@ void E340::step() {
 
 		// Frequency
 		float pitch = basePitch + spread * detunings[i] + 12.0 * noise;
-		pitch = clampf(pitch, -72.0, 72.0);
+		pitch = clamp(pitch, -72.0f, 72.0f);
 		float freq = 261.626 * powf(2.0, pitch / 12.0);
 
 		// Advance phase
-		float deltaPhase = freq / engineGetSampleRate();
+		float deltaPhase = freq * engineGetSampleTime();
 		float phase = phases[i] + deltaPhase;
 
 		// Reset phase
@@ -162,7 +162,7 @@ void E340::step() {
 	saws /= density;
 
 	// Apply HP filter at 20Hz
-	float r = 20.0 / engineGetSampleRate();
+	float r = 20.0 * engineGetSampleTime();
 	sineFilter.setCutoff(r);
 	sawFilter.setCutoff(r);
 
