@@ -53,7 +53,7 @@ E340::E340() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {
 
 	// Randomize initial phases
 	for (int i = 0; i < 8; i++) {
-		phases[i] = randomf();
+		phases[i] = randomUniform();
 	}
 }
 
