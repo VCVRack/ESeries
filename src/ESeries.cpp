@@ -5,10 +5,8 @@ Plugin *plugin;
 
 void init(rack::Plugin *p) {
 	plugin = p;
-	p->slug = "ESeries";
-#ifdef VERSION
+	p->slug = TOSTRING(SLUG);
 	p->version = TOSTRING(VERSION);
-#endif
 
 	p->addModel(createModel<E340Widget>("E-Series", "E340", "E340 Cloud Generator", OSCILLATOR_TAG));
 }

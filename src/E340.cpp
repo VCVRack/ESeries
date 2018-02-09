@@ -186,29 +186,29 @@ E340Widget::E340Widget() {
 		addChild(panel);
 	}
 
-	addChild(createScrew<ScrewSilver>(Vec(15, 0)));
-	addChild(createScrew<ScrewSilver>(Vec(box.size.x-30, 0)));
-	addChild(createScrew<ScrewSilver>(Vec(15, 365)));
-	addChild(createScrew<ScrewSilver>(Vec(box.size.x-30, 365)));
+	addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
+	addChild(Widget::create<ScrewSilver>(Vec(box.size.x-30, 0)));
+	addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
+	addChild(Widget::create<ScrewSilver>(Vec(box.size.x-30, 365)));
 
-	addParam(createParam<SynthTechAlco>(Vec(26, 43), module, E340::COARSE_PARAM, -48.0, 48.0, 0.0));
-	addParam(createParam<SynthTechAlco>(Vec(137, 43), module, E340::FINE_PARAM, -1.0, 1.0, 0.0));
+	addParam(ParamWidget::create<SynthTechAlco>(Vec(26, 43), module, E340::COARSE_PARAM, -48.0, 48.0, 0.0));
+	addParam(ParamWidget::create<SynthTechAlco>(Vec(137, 43), module, E340::FINE_PARAM, -1.0, 1.0, 0.0));
 
-	addParam(createParam<SynthTechAlco>(Vec(26, 109), module, E340::FM_PARAM, 0.0, 1.0, 0.0));
-	addParam(createParam<SynthTechAlco>(Vec(137, 109), module, E340::SPREAD_PARAM, 0.0, 1.0, 0.0));
+	addParam(ParamWidget::create<SynthTechAlco>(Vec(26, 109), module, E340::FM_PARAM, 0.0, 1.0, 0.0));
+	addParam(ParamWidget::create<SynthTechAlco>(Vec(137, 109), module, E340::SPREAD_PARAM, 0.0, 1.0, 0.0));
 
-	addParam(createParam<SynthTechAlco>(Vec(26, 175), module, E340::CHAOS_PARAM, 0.0, 1.0, 0.0));
-	addParam(createParam<SynthTechAlco>(Vec(137, 175), module, E340::CHAOS_BW_PARAM, 0.0, 1.0, 0.5));
+	addParam(ParamWidget::create<SynthTechAlco>(Vec(26, 175), module, E340::CHAOS_PARAM, 0.0, 1.0, 0.0));
+	addParam(ParamWidget::create<SynthTechAlco>(Vec(137, 175), module, E340::CHAOS_BW_PARAM, 0.0, 1.0, 0.5));
 
-	addParam(createParam<NKK>(Vec(89, 140), module, E340::DENSITY_PARAM, 0.0, 2.0, 2.0));
+	addParam(ParamWidget::create<NKK>(Vec(89, 140), module, E340::DENSITY_PARAM, 0.0, 2.0, 2.0));
 
-	addInput(createInput<CL1362Port>(Vec(13, 243), module, E340::PITCH_INPUT));
-	addInput(createInput<CL1362Port>(Vec(63, 243), module, E340::FM_INPUT));
-	addInput(createInput<CL1362Port>(Vec(113, 243), module, E340::SYNC_INPUT));
-	addInput(createInput<CL1362Port>(Vec(163, 243), module, E340::SPREAD_INPUT));
+	addInput(Port::create<CL1362Port>(Vec(13, 243), Port::INPUT, module, E340::PITCH_INPUT));
+	addInput(Port::create<CL1362Port>(Vec(63, 243), Port::INPUT, module, E340::FM_INPUT));
+	addInput(Port::create<CL1362Port>(Vec(113, 243), Port::INPUT, module, E340::SYNC_INPUT));
+	addInput(Port::create<CL1362Port>(Vec(163, 243), Port::INPUT, module, E340::SPREAD_INPUT));
 
-	addInput(createInput<CL1362Port>(Vec(13, 301), module, E340::CHAOS_INPUT));
-	addInput(createInput<CL1362Port>(Vec(63, 301), module, E340::CHAOS_BW_INPUT));
-	addOutput(createOutput<CL1362Port>(Vec(113, 301), module, E340::SAW_OUTPUT));
-	addOutput(createOutput<CL1362Port>(Vec(163, 301), module, E340::SINE_OUTPUT));
+	addInput(Port::create<CL1362Port>(Vec(13, 301), Port::INPUT, module, E340::CHAOS_INPUT));
+	addInput(Port::create<CL1362Port>(Vec(63, 301), Port::INPUT, module, E340::CHAOS_BW_INPUT));
+	addOutput(Port::create<CL1362Port>(Vec(113, 301), Port::OUTPUT, module, E340::SAW_OUTPUT));
+	addOutput(Port::create<CL1362Port>(Vec(163, 301), Port::OUTPUT, module, E340::SINE_OUTPUT));
 }

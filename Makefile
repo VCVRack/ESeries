@@ -1,9 +1,9 @@
 SLUG = ESeries
-VERSION = 0.5.0
+VERSION = 0.6.0dev
 
 SOURCES += $(wildcard src/*.cpp)
 
 DISTRIBUTABLES += $(wildcard LICENSE*) res
 
-
-include ../../plugin.mk
+RACK_DIR ?= ../..
+include $(RACK_DIR)/plugin.mk
