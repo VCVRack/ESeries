@@ -6,6 +6,9 @@ using namespace rack;
 
 extern Plugin *plugin;
 
+extern Model *modelE340;
+
+
 ////////////////////
 // helpers
 ////////////////////
@@ -32,12 +35,4 @@ struct ESeriesSwitch : SpriteKnob {
 		spriteSize = Vec(56, 56);
 		spriteImage = Image::load("plugins/ESeries/res/switch.png");
 	}
-};
-
-////////////////////
-// module widgets
-////////////////////
-
-struct E340Widget : ModuleWidget {
-	E340Widget();
 };

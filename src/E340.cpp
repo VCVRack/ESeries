@@ -174,17 +174,13 @@ void E340::step() {
 }
 
 
-E340Widget::E340Widget() {
-	E340 *module = new E340();
-	setModule(module);
-	box.size = Vec(15*14, 380);
+struct E340Widget : ModuleWidget {
+	E340Widget(E340 *module);
+};
 
-	{
-		SVGPanel *panel = new SVGPanel();
-		panel->box.size = box.size;
-		panel->setBackground(SVG::load(assetPlugin(plugin, "res/E340.svg")));
-		addChild(panel);
-	}
+
+E340Widget::E340Widget(E340 *module) : ModuleWidget(module) {
+	setPanel(SVG::load(assetPlugin(plugin, "res/E340.svg")));
 
 	addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
 	addChild(Widget::create<ScrewSilver>(Vec(box.size.x-30, 0)));
@@ -212,3 +208,6 @@ E340Widget::E340Widget() {
 	addOutput(Port::create<CL1362Port>(Vec(113, 301), Port::OUTPUT, module, E340::SAW_OUTPUT));
 	addOutput(Port::create<CL1362Port>(Vec(163, 301), Port::OUTPUT, module, E340::SINE_OUTPUT));
 }
+
+
+Model *modelE340 = Model::create<E340, E340Widget>("E-Series", "E340", "E340 Cloud Generator", OSCILLATOR_TAG);
