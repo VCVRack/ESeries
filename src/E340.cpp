@@ -210,4 +210,4 @@ E340Widget::E340Widget(E340 *module) : ModuleWidget(module) {
 }
 
 
-Model *modelE340 = Model::create<E340, E340Widget>("E-Series", "E340", "E340 Cloud Generator", OSCILLATOR_TAG);
+Model *modelE340 = Model::create<E340, E340Widget>("E340");
