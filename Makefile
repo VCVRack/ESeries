@@ -1,5 +1,4 @@
 SOURCES += $(wildcard src/*.cpp)
-FLAGS += -w
 
 DISTRIBUTABLES += $(wildcard LICENSE*) res
 
