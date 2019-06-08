@@ -1,10 +1,10 @@
 #include "ESeries.hpp"
 
 
-Plugin *plugin;
+Plugin *pluginInstance;
 
 void init(rack::Plugin *p) {
-	plugin = p;
+	pluginInstance = p;
 	p->slug = TOSTRING(SLUG);
 	p->version = TOSTRING(VERSION);
 
