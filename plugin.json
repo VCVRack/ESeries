@@ -1,7 +1,7 @@
 {
   "slug": "ESeries",
   "name": "E-Series",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "license": "BSD-3-Clause",
   "author": "VCV",
   "authorEmail": "contact@vcvrack.com",
@@ -10,6 +10,7 @@
   "manualUrl": "https://vcvrack.com/ESeries.html#manual",
   "sourceUrl": "https://github.com/VCVRack/ESeries",
   "donateUrl": "",
+  "changelogUrl": "https://github.com/VCVRack/ESeries/blob/v1/CHANGELOG.md",
   "modules": [
     {
       "slug": "E340",
