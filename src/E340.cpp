@@ -60,7 +60,7 @@ struct E340Oscillator {
 			return;
 
 		T deltaPhases[N];
-		float noiseCutoff = chaosBandwidth / 44100.0;
+		float noiseCutoff = chaosBandwidth * deltaTime;
 
 		for (int c = 0; c < channels; c += T::size) {
 			int i = c / T::size;
@@ -74,7 +74,7 @@ struct E340Oscillator {
 				T noise = 0.f;
 				for (int j = 0; c + j < channels; j++) {
 					noise[j] = 2.f * random::uniform() - 1.f;
-					noiseFilters[c + j].setCutoff(noiseCutoff);
+					noiseFilters[c + j].setCutoffFreq(noiseCutoff);
 					noiseFilters[c + j].process(noise[j]);
 					noise[j] = noiseFilters[c + j].lowpass();
 				}
@@ -265,15 +265,13 @@ struct E340 : Module {
 			// Chaos
 			float chaos = params[CHAOS_PARAM].getValue() + inputs[CHAOS_INPUT].getPolyVoltage(c) / 10.f;
 			chaos = clamp(chaos, 0.f, 1.f);
-			const float chaosPower = 50.0;
 			chaos = 8.f * std::pow(chaos, 3);
 			oscillator->chaos = chaos;
 
 			// Chaos bandwidth
 			float chaosBandwidth = params[CHAOS_BW_PARAM].getValue() + inputs[CHAOS_BW_INPUT].getPolyVoltage(c) / 10.f;
 			chaosBandwidth = clamp(chaosBandwidth, 0.f, 1.f);
-			chaosBandwidth = 1.f * std::pow(100.f, chaosBandwidth);
-			// // This shouldn't scale with the global sample rate, because of reasons.
+			chaosBandwidth = 0.1f * std::pow(chaosBandwidth + 1.f, 6);
 			oscillator->chaosBandwidth = chaosBandwidth;
 
 			// Process
