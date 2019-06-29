@@ -16,7 +16,8 @@
       "name": "E340 Cloud Generator",
       "description": "Based on Synthesis Technology E340",
       "tags": [
-        "VCO"
+        "VCO",
+        "Polyphonic"
       ]
     }
   ]

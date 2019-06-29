@@ -1,6 +1,176 @@
 #include "ESeries.hpp"
 
 
+template <typename T>
+T sin2pi_pade_05_5_4(T x) {
+	x -= 0.5f;
+	return (T(-6.283185307) * x + T(33.19863968) * simd::pow(x, 3) - T(32.44191367) * simd::pow(x, 5))
+		/ (1 + T(1.296008659) * simd::pow(x, 2) + T(0.7028072946) * simd::pow(x, 4));
+}
+
+
+/** Most of this class copied from Fundamental VCO */
+template <int MAX_CHANNELS>
+struct E340Oscillator {
+	using T = simd::float_4;
+	static constexpr int N = MAX_CHANNELS / T::size;
+
+	// Settings
+	T spreadTunings[N];
+	bool sinEnabled = false;
+	bool sawEnabled = false;
+	bool syncEnabled = false;
+	int channels = 1;
+
+	// Parameters
+	float pitch;
+	float spread;
+	float chaos;
+	float chaosBandwidth;
+
+	// State
+	T phases[N] = {};
+	dsp::MinBlepGenerator<16, 32, T> sinMinBleps[N];
+	dsp::MinBlepGenerator<16, 32, T> sawMinBleps[N];
+	float lastSyncValue = 0.f;
+	dsp::RCFilter sinFilter;
+	dsp::RCFilter sawFilter;
+	dsp::RCFilter noiseFilters[MAX_CHANNELS];
+
+	// Output
+	float sinOutput;
+	float sawOutput;
+
+	E340Oscillator() {
+		// Fourths
+		spreadTunings[0] = T(-21, 21, -9, 9) / 12;
+		spreadTunings[1] = T(-3, 3, -15, 15) / 12;
+		// Fifths
+		// spreadTunings[0] = T(-24, 24, -12, 12) / 12;
+		// spreadTunings[1] = T(-5, 7, -17, 19) / 12;
+
+		// Randomize initial phases
+		for (int i = 0; i < MAX_CHANNELS; i++) {
+			phases[i / T::size][i % T::size] = random::uniform();
+		}
+	}
+
+	void process(float deltaTime, float syncValue) {
+		T deltaPhases[N];
+		float noiseCutoff = chaosBandwidth / 44100.0;
+
+		for (int c = 0; c < channels; c += T::size) {
+			int i = c / T::size;
+
+			// Spread
+			T spreadPitch = pitch;
+			spreadPitch += spreadTunings[i] * spread;
+
+			// Chaos
+			T noise = 0.f;
+			for (int j = 0; c + j < channels; j++) {
+				noise[j] = 2.f * random::uniform() - 1.f;
+				noiseFilters[c + j].setCutoff(noiseCutoff);
+				noiseFilters[c + j].process(noise[j]);
+				noise[j] = noiseFilters[c + j].lowpass();
+			}
+			spreadPitch += noise * chaos;
+
+			// Frequency
+			T freq = dsp::FREQ_C4 * simd::pow(2.f, spreadPitch);
+
+			// Advance phase
+			deltaPhases[i] = simd::clamp(freq * deltaTime, 1e-6f, 0.35f);
+			phases[i] += deltaPhases[i];
+			phases[i] -= simd::floor(phases[i]);
+
+			// Jump saw when crossing 0.5
+			T halfCrossing = (0.5f - (phases[i] - deltaPhases[i])) / deltaPhases[i];
+			int halfMask = simd::movemask((0 < halfCrossing) & (halfCrossing <= 1.f));
+			if (halfMask) {
+				for (int j = 0; c + j < channels; j++) {
+					if (halfMask & (1 << j)) {
+						T mask = simd::movemaskInverse<T>(1 << j);
+						float p = halfCrossing[j] - 1.f;
+						T x = mask & (-2.f);
+						sawMinBleps[i].insertDiscontinuity(p, x);
+					}
+				}
+			}
+		}
+
+		// Detect sync
+		// Might be NAN or outside of [0, 1) range
+		if (syncEnabled) {
+			float deltaSync = syncValue - lastSyncValue;
+			float syncCrossing = -lastSyncValue / deltaSync;
+			lastSyncValue = syncValue;
+			if ((0.f < syncCrossing) && (syncCrossing <= 1.f) && (syncValue >= 0.f)) {
+				for (int c = 0; c < channels; c += T::size) {
+					int i = c / T::size;
+					T newPhase = syncCrossing * deltaPhases[i];
+					// Insert minBLEP for sync
+					float p = syncCrossing - 1.f;
+					T x;
+					x = saw(newPhase) - saw(phases[i]);
+					sawMinBleps[i].insertDiscontinuity(p, x);
+					x = sin(newPhase) - sin(phases[i]);
+					sinMinBleps[i].insertDiscontinuity(p, x);
+					phases[i] = newPhase;
+				}
+			}
+		}
+
+		// Sum output
+		float sinTotal = 0.f;
+		float sawTotal = 0.f;
+		for (int c = 0; c < channels; c += T::size) {
+			int i = c / T::size;
+
+			// Sin
+			T sinValue = sin(phases[i]);
+			sinValue += sinMinBleps[i].process();
+
+			for (int j = 0; c + j < channels; j++)
+				sinTotal += sinValue[j];
+
+			// Saw
+			T sawValue = saw(phases[i]);
+			sawValue += sawMinBleps[i].process();
+
+			for (int j = 0; c + j < channels; j++)
+				sawTotal += sawValue[j];
+		}
+
+		sinTotal /= channels;
+		sawTotal /= channels;
+
+		// DC block
+		float f = 20.f * deltaTime;
+		sinFilter.setCutoffFreq(f);
+		sawFilter.setCutoffFreq(f);
+		sinFilter.process(sinTotal);
+		sawFilter.process(sawTotal);
+		sinOutput = sinFilter.highpass();
+		sawOutput = sawFilter.highpass();
+	}
+
+	T sin(T phase) {
+		T v;
+		v = sin2pi_pade_05_5_4(phase);
+		return v;
+	}
+
+	T saw(T phase) {
+		T v;
+		T x = phase + 0.5f;
+		x -= simd::trunc(x);
+		v = 2 * x - 1;
+		return v;
+	}
+};
+
+
 struct E340 : Module {
 	enum ParamIds {
 		COARSE_PARAM,
@@ -27,84 +197,81 @@ struct E340 : Module {
 		NUM_OUTPUTS
 	};
 
-	float phases[8] = {};
-	dsp::RCFilter noiseFilters[8];
-	float sync = 0.0;
-
-	dsp::MinBlepGenerator<16, 32> sineMinBLEP;
-	dsp::MinBlepGenerator<16, 32> sawMinBLEP;
-
-	// For removing DC
-	dsp::RCFilter sineFilter;
-	dsp::RCFilter sawFilter;
+	E340Oscillator<8> oscillators[16];
 
 	E340() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS);
-		configParam(COARSE_PARAM, -48.0, 48.0, 0.0, "Coarse frequency");
+		configParam(COARSE_PARAM, -48.0, 48.0, 0.0, "Coarse frequency", " Hz", dsp::FREQ_SEMITONE, dsp::FREQ_C4);
 		configParam(FINE_PARAM, -1.0, 1.0, 0.0, "Fine frequency");
 		configParam(FM_PARAM, 0.0, 1.0, 0.0, "Frequency modulation");
 		configParam(SPREAD_PARAM, 0.0, 1.0, 0.0, "Spread");
 		configParam(CHAOS_PARAM, 0.0, 1.0, 0.0, "Chaos");
 		configParam(CHAOS_BW_PARAM, 0.0, 1.0, 0.5, "Chaos bandwidth");
 		configParam(DENSITY_PARAM, 0.0, 2.0, 2.0, "Density");
-
-		// Randomize initial phases
-		for (int i = 0; i < 8; i++) {
-			phases[i] = random::uniform();
-		}
 	}
 
 	void process(const ProcessArgs &args) override {
-		// Base pitch
-		float basePitch = params[COARSE_PARAM].getValue() + 12.0 * inputs[PITCH_INPUT].getVoltage();
-		if (inputs[FM_INPUT].isConnected()) {
-			basePitch += 12.0 / 4.0 * params[FM_PARAM].getValue() * inputs[FM_INPUT].getVoltage();
+		// 1.34us
+
+		int channels = std::max(inputs[PITCH_INPUT].getChannels(), 1);
+
+		for (int c = 0; c < channels; c++) {
+			auto *oscillator = &oscillators[c];
+
+			// Settings
+			oscillator->sinEnabled = outputs[SINE_OUTPUT].isConnected();
+			oscillator->sawEnabled = outputs[SAW_OUTPUT].isConnected();
+			oscillator->syncEnabled = inputs[SYNC_INPUT].isConnected();
+
+			// Density
+			switch ((int) params[DENSITY_PARAM].getValue()) {
+				case 0: oscillator->channels = 2; break;
+				case 1: oscillator->channels = 4; break;
+				default: oscillator->channels = 8; break;
+			}
+
+			// Pitch
+			float pitch = params[COARSE_PARAM].getValue() / 12.f + inputs[PITCH_INPUT].getVoltage(c);
+			if (inputs[FM_INPUT].isConnected()) {
+				pitch += params[FM_PARAM].getValue() / 4.f * inputs[FM_INPUT].getPolyVoltage(c);
+			}
+			pitch += params[FINE_PARAM].getValue() / 12.f;
+			oscillator->pitch = pitch;
+
+			// Spread
+			float spread = params[SPREAD_PARAM].getValue() + inputs[SPREAD_INPUT].getPolyVoltage(c) / 10.f;
+			spread = clamp(spread, 0.f, 1.f);
+			spread = std::pow(spread, 3);
+			oscillator->spread = spread;
+
+			// Chaos
+			float chaos = params[CHAOS_PARAM].getValue() + inputs[CHAOS_INPUT].getPolyVoltage(c) / 10.f;
+			chaos = clamp(chaos, 0.f, 1.f);
+			const float chaosPower = 50.0;
+			chaos = 8.f * std::pow(chaos, 3);
+			oscillator->chaos = chaos;
+
+			// Chaos bandwidth
+			float chaosBandwidth = params[CHAOS_BW_PARAM].getValue() + inputs[CHAOS_BW_INPUT].getPolyVoltage(c) / 10.f;
+			chaosBandwidth = clamp(chaosBandwidth, 0.f, 1.f);
+			chaosBandwidth = 1.f * std::pow(100.f, chaosBandwidth);
+			// // This shouldn't scale with the global sample rate, because of reasons.
+			oscillator->chaosBandwidth = chaosBandwidth;
+
+			// Process
+			float syncValue = inputs[SYNC_INPUT].getPolyVoltage(c);
+			oscillator->process(args.sampleTime, syncValue);
+
+			// Outputs
+			outputs[SINE_OUTPUT].setVoltage(5.f * oscillator->sinOutput, c);
+			outputs[SAW_OUTPUT].setVoltage(5.f * oscillator->sawOutput, c);
 		}
-		basePitch += params[FINE_PARAM].getValue();
 
-		// Spread
-		float spread = params[SPREAD_PARAM].getValue() + inputs[SPREAD_INPUT].getVoltage() / 10.0;
-		spread = clamp(spread, 0.0f, 1.0f);
-		const float spreadPower = 50.0;
-		spread = (powf(spreadPower + 1.0, spread) - 1.0) / spreadPower;
+		outputs[SINE_OUTPUT].setChannels(channels);
+		outputs[SAW_OUTPUT].setChannels(channels);
 
-		// Chaos
-		float chaos = params[CHAOS_PARAM].getValue() + inputs[CHAOS_INPUT].getVoltage() / 10.0;
-		chaos = clamp(chaos, 0.0f, 1.0f);
-		const float chaosPower = 50.0;
-		chaos = 8.0 * (powf(chaosPower + 1.0, chaos) - 1.0) / chaosPower;
+#if 0
 
-		// Chaos BW
-		float chaosBW = params[CHAOS_BW_PARAM].getValue() + inputs[CHAOS_BW_INPUT].getVoltage() / 10.0;
-		chaosBW = clamp(chaosBW, 0.0f, 1.0f);
-		chaosBW = 6.0 * powf(100.0, chaosBW);
-		// This shouldn't scale with the global sample rate, because of reasons.
-		float filterCutoff = chaosBW / 44100.0;
-
-		// Check sync input
-		float newSync = inputs[SYNC_INPUT].getVoltage() - 0.25;
-		float syncCrossing = INFINITY;
-		if (sync < 0.0 && newSync >= 0.0) {
-			float deltaSync = newSync - sync;
-			syncCrossing = -newSync / deltaSync;
-		}
-		sync = newSync;
-
-		// Density
-		int density;
-		switch ((int)roundf(params[DENSITY_PARAM].getValue())) {
-			case 0: density = 2; break;
-			case 1: density = 4; break;
-			default: density = 8; break;
-		}
-
-		// Detuning amounts, in note value
-		const static float detunings[8] = {-21, 21, -9, 9, -3, 3, -15, 15}; // Perfect fourths
-		// const static float detunings[8] = {-24, 24, -12, 12, -5, 7, -17, 19}; // Fifths
-
-		// Oscillator block
-		float sines = 0.0;
-		float saws = 0.0;
 		for (int i = 0; i < density; i++) {
 			// Noise
 			float noise = 0.0;
@@ -118,56 +285,9 @@ struct E340 : Module {
 
 			// Frequency
 			float pitch = basePitch + spread * detunings[i] + 12.0 * noise;
-			pitch = clamp(pitch, -72.0f, 72.0f);
+			pitch = clamp(pitch, -72.f, 72.f);
 			float freq = 261.626 * powf(2.0, pitch / 12.0);
-
-			// Advance phase
-			float deltaPhase = freq * args.sampleTime;
-			float phase = phases[i] + deltaPhase;
-
-			// Reset phase
-			if (phase >= 1.0) {
-				phase -= 1.0;
-				float crossing = -phase / deltaPhase;
-				sawMinBLEP.insertDiscontinuity(crossing, -2.0);
-			}
-
-			// Compute output
-			float sine = -cosf(2*M_PI * phase);
-			float saw = 2.0*phase - 1.0;
-
-			// Sync
-			if (syncCrossing <= 0.0) {
-				phase = deltaPhase * -syncCrossing;
-				float newSine = -cosf(2*M_PI * phase);
-				float newSaw = 2.0*phase - 1.0;
-				sineMinBLEP.insertDiscontinuity(syncCrossing, newSine - sine);
-				sawMinBLEP.insertDiscontinuity(syncCrossing, newSaw - saw);
-				sine = newSine;
-				saw = newSaw;
-			}
-
-			phases[i] = phase;
-			sines += sine;
-			saws += saw;
-		}
-
-		sines += sineMinBLEP.process();
-		saws += sawMinBLEP.process();
-
-		sines /= density;
-		saws /= density;
-
-		// Apply HP filter at 20Hz
-		float r = 20.0 * args.sampleTime;
-		sineFilter.setCutoff(r);
-		sawFilter.setCutoff(r);
-
-		sineFilter.process(sines);
-		sawFilter.process(saws);
-
-		outputs[SINE_OUTPUT].setVoltage(5.0 * sineFilter.highpass());
-		outputs[SAW_OUTPUT].setVoltage(5.0 * sawFilter.highpass());
+#endif
 	}
 };
 
