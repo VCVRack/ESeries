@@ -56,6 +56,9 @@ struct E340Oscillator {
 	}
 
 	void process(float deltaTime, float syncValue) {
+		if (!sinEnabled && !sawEnabled)
+			return;
+
 		T deltaPhases[N];
 		float noiseCutoff = chaosBandwidth / 44100.0;
 
@@ -67,14 +70,16 @@ struct E340Oscillator {
 			spreadPitch += spreadTunings[i] * spread;
 
 			// Chaos
-			T noise = 0.f;
-			for (int j = 0; c + j < channels; j++) {
-				noise[j] = 2.f * random::uniform() - 1.f;
-				noiseFilters[c + j].setCutoff(noiseCutoff);
-				noiseFilters[c + j].process(noise[j]);
-				noise[j] = noiseFilters[c + j].lowpass();
+			if (chaos > 0.f) {
+				T noise = 0.f;
+				for (int j = 0; c + j < channels; j++) {
+					noise[j] = 2.f * random::uniform() - 1.f;
+					noiseFilters[c + j].setCutoff(noiseCutoff);
+					noiseFilters[c + j].process(noise[j]);
+					noise[j] = noiseFilters[c + j].lowpass();
+				}
+				spreadPitch += noise * chaos;
 			}
-			spreadPitch += noise * chaos;
 
 			// Frequency
 			T freq = dsp::FREQ_C4 * simd::pow(2.f, spreadPitch);
@@ -84,16 +89,18 @@ struct E340Oscillator {
 			phases[i] += deltaPhases[i];
 			phases[i] -= simd::floor(phases[i]);
 
-			// Jump saw when crossing 0.5
-			T halfCrossing = (0.5f - (phases[i] - deltaPhases[i])) / deltaPhases[i];
-			int halfMask = simd::movemask((0 < halfCrossing) & (halfCrossing <= 1.f));
-			if (halfMask) {
-				for (int j = 0; c + j < channels; j++) {
-					if (halfMask & (1 << j)) {
-						T mask = simd::movemaskInverse<T>(1 << j);
-						float p = halfCrossing[j] - 1.f;
-						T x = mask & (-2.f);
-						sawMinBleps[i].insertDiscontinuity(p, x);
+			if (sawEnabled) {
+				// Jump saw when crossing 0.5
+				T halfCrossing = (0.5f - (phases[i] - deltaPhases[i])) / deltaPhases[i];
+				int halfMask = simd::movemask((0 < halfCrossing) & (halfCrossing <= 1.f));
+				if (halfMask) {
+					for (int j = 0; c + j < channels; j++) {
+						if (halfMask & (1 << j)) {
+							T mask = simd::movemaskInverse<T>(1 << j);
+							float p = halfCrossing[j] - 1.f;
+							T x = mask & (-2.f);
+							sawMinBleps[i].insertDiscontinuity(p, x);
+						}
 					}
 				}
 			}
@@ -111,48 +118,59 @@ struct E340Oscillator {
 					T newPhase = syncCrossing * deltaPhases[i];
 					// Insert minBLEP for sync
 					float p = syncCrossing - 1.f;
-					T x;
-					x = saw(newPhase) - saw(phases[i]);
-					sawMinBleps[i].insertDiscontinuity(p, x);
-					x = sin(newPhase) - sin(phases[i]);
-					sinMinBleps[i].insertDiscontinuity(p, x);
+					if (sawEnabled) {
+						T x = saw(newPhase) - saw(phases[i]);
+						sawMinBleps[i].insertDiscontinuity(p, x);
+					}
+					if (sinEnabled) {
+						T x = sin(newPhase) - sin(phases[i]);
+						sinMinBleps[i].insertDiscontinuity(p, x);
+					}
 					phases[i] = newPhase;
 				}
 			}
 		}
 
-		// Sum output
-		float sinTotal = 0.f;
-		float sawTotal = 0.f;
-		for (int c = 0; c < channels; c += T::size) {
-			int i = c / T::size;
+		// Output
+		float f = 20.f * deltaTime;
 
-			// Sin
-			T sinValue = sin(phases[i]);
-			sinValue += sinMinBleps[i].process();
+		if (sinEnabled) {
+			float sinTotal = 0.f;
+			for (int c = 0; c < channels; c += T::size) {
+				int i = c / T::size;
 
-			for (int j = 0; c + j < channels; j++)
-				sinTotal += sinValue[j];
+				T sinValue = sin(phases[i]);
+				sinValue += sinMinBleps[i].process();
 
-			// Saw
-			T sawValue = saw(phases[i]);
-			sawValue += sawMinBleps[i].process();
+				for (int j = 0; c + j < channels; j++)
+					sinTotal += sinValue[j];
+			}
+			sinTotal /= channels;
 
-			for (int j = 0; c + j < channels; j++)
-				sawTotal += sawValue[j];
+			// DC block
+			sinFilter.setCutoffFreq(f);
+			sinFilter.process(sinTotal);
+			sinOutput = sinFilter.highpass();
 		}
 
-		sinTotal /= channels;
-		sawTotal /= channels;
+		if (sawEnabled) {
+			float sawTotal = 0.f;
+			for (int c = 0; c < channels; c += T::size) {
+				int i = c / T::size;
 
-		// DC block
-		float f = 20.f * deltaTime;
-		sinFilter.setCutoffFreq(f);
-		sawFilter.setCutoffFreq(f);
-		sinFilter.process(sinTotal);
-		sawFilter.process(sawTotal);
-		sinOutput = sinFilter.highpass();
-		sawOutput = sawFilter.highpass();
+				T sawValue = saw(phases[i]);
+				sawValue += sawMinBleps[i].process();
+
+				for (int j = 0; c + j < channels; j++)
+					sawTotal += sawValue[j];
+			}
+			sawTotal /= channels;
+
+			// DC block
+			sawFilter.setCutoffFreq(f);
+			sawFilter.process(sawTotal);
+			sawOutput = sawFilter.highpass();
+		}
 	}
 
 	T sin(T phase) {
@@ -269,25 +287,6 @@ struct E340 : Module {
 
 		outputs[SINE_OUTPUT].setChannels(channels);
 		outputs[SAW_OUTPUT].setChannels(channels);
-
-#if 0
-
-		for (int i = 0; i < density; i++) {
-			// Noise
-			float noise = 0.0;
-			if (chaos > 0.0) {
-				noise = random::normal();
-				noiseFilters[i].setCutoff(filterCutoff);
-				noiseFilters[i].process(noise);
-				noise = noiseFilters[i].lowpass();
-				noise *= chaos;
-			}
-
-			// Frequency
-			float pitch = basePitch + spread * detunings[i] + 12.0 * noise;
-			pitch = clamp(pitch, -72.f, 72.f);
-			float freq = 261.626 * powf(2.0, pitch / 12.0);
-#endif
 	}
 };
 
