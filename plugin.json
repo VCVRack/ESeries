@@ -18,7 +18,8 @@
       "description": "Based on Synthesis Technology E340",
       "tags": [
         "VCO",
-        "Polyphonic"
+        "Polyphonic",
+        "Hardware"
       ]
     }
   ]
