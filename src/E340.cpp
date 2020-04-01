@@ -1,4 +1,4 @@
-#include "ESeries.hpp"
+#include "plugin.hpp"
 
 
 template <typename T>

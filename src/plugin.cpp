@@ -1,4 +1,4 @@
-#include "ESeries.hpp"
+#include "plugin.hpp"
 
 
 Plugin *pluginInstance;
