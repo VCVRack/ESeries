@@ -2,7 +2,7 @@
   "slug": "ESeries",
   "name": "E-Series",
   "version": "1.0.2",
-  "license": "GPL-3.0-only",
+  "license": "GPL-3.0-or-later",
   "author": "VCV",
   "authorEmail": "contact@vcvrack.com",
   "authorUrl": "https://vcvrack.com/",
