@@ -219,18 +219,28 @@ struct E340 : Module {
 
 	E340() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS);
+
 		configParam(COARSE_PARAM, -48.0, 48.0, 0.0, "Coarse frequency", " Hz", dsp::FREQ_SEMITONE, dsp::FREQ_C4);
-		configParam(FINE_PARAM, -1.0, 1.0, 0.0, "Fine frequency");
-		configParam(FM_PARAM, 0.0, 1.0, 0.0, "Frequency modulation");
-		configParam(SPREAD_PARAM, 0.0, 1.0, 0.0, "Spread");
-		configParam(CHAOS_PARAM, 0.0, 1.0, 0.0, "Chaos");
-		configParam(CHAOS_BW_PARAM, 0.0, 1.0, 0.5, "Chaos bandwidth");
-		configParam(DENSITY_PARAM, 0.0, 2.0, 2.0, "Density");
+		configParam(FINE_PARAM, -1.0, 1.0, 0.0, "Fine frequency", "", 0, 5, 5);
+		configParam(FM_PARAM, 0.0, 1.0, 0.0, "Frequency modulation", "", 0, 10);
+		configParam(SPREAD_PARAM, 0.0, 1.0, 0.0, "Spread", "", 0, 10);
+		configParam(CHAOS_PARAM, 0.0, 1.0, 0.0, "Chaos", "", 0, 10);
+		configParam(CHAOS_BW_PARAM, 0.0, 1.0, 0.5, "Chaos bandwidth", "", 0, 10);
+		configSwitch(DENSITY_PARAM, 0.0, 2.0, 2.0, "Density", {"2", "4", "8"});
+
+		configInput(PITCH_INPUT, "1V/oct");
+		configInput(FM_INPUT, "FM");
+		configInput(SYNC_INPUT, "Sync");
+		configInput(SPREAD_INPUT, "Spread");
+		configInput(CHAOS_INPUT, "Chaos");
+		configInput(CHAOS_BW_INPUT, "Chaos bandwidth");
+
+		configOutput(SAW_OUTPUT, "Sawtooth");
+		configOutput(SINE_OUTPUT, "Sine");
+
 	}
 
 	void process(const ProcessArgs &args) override {
-		// 1.34us
-
 		int channels = std::max(inputs[PITCH_INPUT].getChannels(), 1);
 
 		for (int c = 0; c < channels; c++) {
