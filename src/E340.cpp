@@ -16,7 +16,7 @@ struct E340Oscillator {
 	static constexpr int N = MAX_CHANNELS / T::size;
 
 	// Settings
-	T spreadTunings[N];
+	T spreadTunings[N] = {};
 	bool sinEnabled = false;
 	bool sawEnabled = false;
 	bool syncEnabled = false;
@@ -42,16 +42,23 @@ struct E340Oscillator {
 	float sawOutput;
 
 	E340Oscillator() {
-		// Fourths
-		spreadTunings[0] = T(-21, 21, -9, 9) / 12;
-		spreadTunings[1] = T(-3, 3, -15, 15) / 12;
-		// Fifths
-		// spreadTunings[0] = T(-24, 24, -12, 12) / 12;
-		// spreadTunings[1] = T(-5, 7, -17, 19) / 12;
-
 		// Randomize initial phases
 		for (int i = 0; i < MAX_CHANNELS; i++) {
 			phases[i / T::size][i % T::size] = random::uniform();
+		}
+		setSpreadTuning(0);
+	}
+
+	void setSpreadTuning(int mode) {
+		if (mode == 0) {
+			// Fourths
+			spreadTunings[0] = T(-21, 21, -9, 9) / 12;
+			spreadTunings[1] = T(-3, 3, -15, 15) / 12;
+		}
+		else if (mode == 1) {
+			// Fifths
+			spreadTunings[0] = T(-24, 24, -12, 12) / 12;
+			spreadTunings[1] = T(-5, 7, -17, 19) / 12;
 		}
 	}
 
@@ -216,6 +223,7 @@ struct E340 : Module {
 	};
 
 	E340Oscillator<8> oscillators[16];
+	int spreadTuning = 0;
 
 	E340() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS);
@@ -237,25 +245,30 @@ struct E340 : Module {
 
 		configOutput(SAW_OUTPUT, "Sawtooth");
 		configOutput(SINE_OUTPUT, "Sine");
+	}
 
+	void setSpreadTuning(int spreadTuning) {
+		for (int c = 0; c < 16; c++)
+			oscillators[c].setSpreadTuning(spreadTuning);
+		this->spreadTuning = spreadTuning;
 	}
 
 	void process(const ProcessArgs &args) override {
 		int channels = std::max(inputs[PITCH_INPUT].getChannels(), 1);
 
 		for (int c = 0; c < channels; c++) {
-			auto *oscillator = &oscillators[c];
+			auto& oscillator = oscillators[c];
 
 			// Settings
-			oscillator->sinEnabled = outputs[SINE_OUTPUT].isConnected();
-			oscillator->sawEnabled = outputs[SAW_OUTPUT].isConnected();
-			oscillator->syncEnabled = inputs[SYNC_INPUT].isConnected();
+			oscillator.sinEnabled = outputs[SINE_OUTPUT].isConnected();
+			oscillator.sawEnabled = outputs[SAW_OUTPUT].isConnected();
+			oscillator.syncEnabled = inputs[SYNC_INPUT].isConnected();
 
 			// Density
 			switch ((int) params[DENSITY_PARAM].getValue()) {
-				case 0: oscillator->channels = 2; break;
-				case 1: oscillator->channels = 4; break;
-				default: oscillator->channels = 8; break;
+				case 0: oscillator.channels = 2; break;
+				case 1: oscillator.channels = 4; break;
+				default: oscillator.channels = 8; break;
 			}
 
 			// Pitch
@@ -264,37 +277,49 @@ struct E340 : Module {
 				pitch += params[FM_PARAM].getValue() / 4.f * inputs[FM_INPUT].getPolyVoltage(c);
 			}
 			pitch += params[FINE_PARAM].getValue() / 12.f;
-			oscillator->pitch = pitch;
+			oscillator.pitch = pitch;
 
 			// Spread
 			float spread = params[SPREAD_PARAM].getValue() + inputs[SPREAD_INPUT].getPolyVoltage(c) / 10.f;
 			spread = clamp(spread, 0.f, 1.f);
 			spread = std::pow(spread, 3);
-			oscillator->spread = spread;
+			oscillator.spread = spread;
 
 			// Chaos
 			float chaos = params[CHAOS_PARAM].getValue() + inputs[CHAOS_INPUT].getPolyVoltage(c) / 10.f;
 			chaos = clamp(chaos, 0.f, 1.f);
 			chaos = 8.f * std::pow(chaos, 3);
-			oscillator->chaos = chaos;
+			oscillator.chaos = chaos;
 
 			// Chaos bandwidth
 			float chaosBandwidth = params[CHAOS_BW_PARAM].getValue() + inputs[CHAOS_BW_INPUT].getPolyVoltage(c) / 10.f;
 			chaosBandwidth = clamp(chaosBandwidth, 0.f, 1.f);
 			chaosBandwidth = 0.1f * std::pow(chaosBandwidth + 1.f, 6);
-			oscillator->chaosBandwidth = chaosBandwidth;
+			oscillator.chaosBandwidth = chaosBandwidth;
 
 			// Process
 			float syncValue = inputs[SYNC_INPUT].getPolyVoltage(c);
-			oscillator->process(args.sampleTime, syncValue);
+			oscillator.process(args.sampleTime, syncValue);
 
 			// Outputs
-			outputs[SINE_OUTPUT].setVoltage(5.f * oscillator->sinOutput, c);
-			outputs[SAW_OUTPUT].setVoltage(5.f * oscillator->sawOutput, c);
+			outputs[SINE_OUTPUT].setVoltage(5.f * oscillator.sinOutput, c);
+			outputs[SAW_OUTPUT].setVoltage(5.f * oscillator.sawOutput, c);
 		}
 
 		outputs[SINE_OUTPUT].setChannels(channels);
 		outputs[SAW_OUTPUT].setChannels(channels);
+	}
+
+	json_t* dataToJson() override {
+		json_t* rootJ = json_object();
+		json_object_set_new(rootJ, "spreadTuning", json_integer(spreadTuning));
+		return rootJ;
+	}
+
+	void dataFromJson(json_t* rootJ) override {
+		json_t* spreadTuningJ = json_object_get(rootJ, "spreadTuning");
+		if (spreadTuningJ)
+			setSpreadTuning(json_integer_value(spreadTuningJ));
 	}
 };
 
@@ -329,6 +354,21 @@ struct E340Widget : ModuleWidget {
 		addInput(createInput<CL1362Port>(Vec(63, 301), module, E340::CHAOS_BW_INPUT));
 		addOutput(createOutput<CL1362Port>(Vec(113, 301), module, E340::SAW_OUTPUT));
 		addOutput(createOutput<CL1362Port>(Vec(163, 301), module, E340::SINE_OUTPUT));
+	}
+
+	void appendContextMenu(Menu* menu) override {
+		E340* module = dynamic_cast<E340*>(this->module);
+
+		menu->addChild(new MenuSeparator);
+
+		static const std::vector<std::string> spreadTuningLabels = {
+			"Fourths",
+			"Fifths",
+		};
+		menu->addChild(createIndexSubmenuItem("Spread tuning", spreadTuningLabels,
+			[=]() {return module->spreadTuning;},
+			[=](int spreadTuning) {module->setSpreadTuning(spreadTuning);}
+		));
 	}
 };
 
