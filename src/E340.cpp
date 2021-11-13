@@ -247,10 +247,14 @@ struct E340 : Module {
 		configOutput(SINE_OUTPUT, "Sine");
 	}
 
+	void onReset() override {
+		setSpreadTuning(0);
+	}
+
 	void setSpreadTuning(int spreadTuning) {
+		this->spreadTuning = spreadTuning;
 		for (int c = 0; c < 16; c++)
 			oscillators[c].setSpreadTuning(spreadTuning);
-		this->spreadTuning = spreadTuning;
 	}
 
 	void process(const ProcessArgs &args) override {
